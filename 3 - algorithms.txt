@@ -1,0 +1,364 @@
+
+
+Time Complexity
+
+- for (i=1; i<n; i=i*2) : O(logn)
+    -- iterations 1 - k ---> i = 2^0 - i = 2^k 
+    -- condition i < n -----> 2^k < n ------> k < logn 
+    -- number of max iteration = ceil(logn)
+    -- order logn
+
+
+
+-       i = 1; k = 0;
+        while (k < n):
+            k = k + i
+            i++
+
+    -- at iteration 1: k =  1
+    -- at iteration 2: k = 1 + 2
+    -- at iteration 3: k = 1 + 2 + 3
+    -- assume max iteration m: k = 1 + 2 + ... + m = m(m+1) / 2 
+    -- condition k < n -----> m(m+1)/2 < n -----> m^2 < n -----> m < sqrt(n)
+    -- order sqrt(n) 
+
+
+
+
+
+
+
+
+
+
+Recourrence Relation Decreasing Functions - T(n-b)
+
+- what's the time complexity of the following 
+
+        void Test(int n)
+        {
+            if (n>0)
+            {
+                for(i=1; i<n; i=i*2) ---------------------------------------------- logn  
+                {
+                    printf("%d", i);
+                }
+                Test(n-1) --------------------------------------------------------- T(n-1)
+            }
+        }
+
+    -- T(n) = logn + T(n-1)
+    -- T(n-1) = log(n-1) + T(n-2)
+    -- ...
+    -- T(2) = log2 + T(1)
+    -- T(1) = log1 + T(0)
+    -- time complexity = log(n) + log(n-1) + ... + log(2) + log(1) = log(n*(n-1)*...*2*1) = log(n!)
+    -- upper bound = log(n^n) = nlog(n)
+
+
+
+- suppose the time compexity of one iteration is g(n)
+    -- suppose the number (n) is decreased by 1 in each iteration (i.e., T(n) = T(n-1) + g(n)), the time complexity is n * g(n)
+    -- suppose it is decreased by 2 in each iteration (i.e., T(n) = T(n-2) + g(n)), the time complexity is n*g(n) / 2 ---> n * g(n)
+    -- suppose T(n) = 2T(n-1) + g(n) - see below - 2^n * g(n)
+
+
+- consider
+
+        Test(int n)
+        {
+            if(n>0)
+            {
+                printf("%d", n);
+                Test(n-1);
+                Test(n-1);
+            }
+        }
+
+    -- T(n) = 2T(n-1) + 1
+    -- T(n) = 2[2T(n-2) + 1] + 1
+    -- T(n) = 2^2 * T(n-2) + 2 + 1
+    -- T(n) = 2^2 * [2T(n-3) + 1] + 2 + 1
+    -- T(n) = 2^3 * T(n-3) + 4 + 2 + 1
+    -- ...
+    -- T(n) = 2^n * T(0) + 2^(n-1) + ... + 1
+    -- T(n) = 2^(n+1) - 1
+    -----> O(2^n)
+
+- Master theorem for decreasing functions
+    -- T(n) = aT(n-b) + f(n) where a > 0, b > 0, and f(n) = O(n^k)
+    -- for a > 1
+        --- O(T(n)) = a^(n/b) * T(f(n)) / b ----> O(a^(n/b) * n^k)
+    -- for a = 1
+        --- O(T(n)) = n * T(f(n)) / b ---> O(n^(k+1)) 
+    -- for a < 1
+        --- O(n^k)
+
+
+
+
+
+
+
+
+
+Recurrence Relation Dividing Functions - T(n/b)
+
+- consider
+
+        Test(int n)
+        {
+            if (n>1)
+            {
+                printf("%d", n);
+                Test(n/2);
+            }
+        }
+
+
+    -- T(n) = 1 + T(n/2)
+    -- T(n) = 1 + (1 + T(n/2^2))
+    -- T(n) = 2 + T(n/2^2)
+    -- T(n) = 2 + (1 + T(n/2^3))
+    -- T(n) = 3 + T(n/2^3)
+    -- ...
+    -- T(n) = log(n) + T(n/2^(log(n))) = log(n) + T(1) = log(n) + 1
+    -- T(n) = O(log(n))
+
+
+
+
+- consider T(n) =  |--> 1           when n = 1
+                   |--> T(n/2) + n  when n > 1
+
+
+    -- T(n) = T(n/2) + n 
+    --      = (T(n/2^2) + n/2) + n
+    --      = (T(n/2^3) + n/2^2) + n/2 + n 
+    ------->= T(n/2^k) + n/2^(k-1) + n/2^(k-2) + ... + n/2^2 + n/2^1 + n ----- assume algorithm stops and T(n/2^k) = 1
+    --      = n [sum(1/2^i) for i in [0:k]]
+    --      = n * 1
+    -- T(n) = O(n)
+
+
+
+- consider
+
+        void Test(int n)
+        {
+            if (n>1)
+            {
+                for (i=0; i<n; i++) ----------------------------------- n
+                {
+                    stdout;
+                }
+                Test(n/2) ---------------------------------------------T(n/2)
+                Test(n/2) ---------------------------------------------T(n/2)
+            }
+        }
+
+- T(n)  =   |---> 1                 when n = 1
+            |---> 2T(n/2) + n       when n > 1
+        = 2[2T(n/2^2) + n/2] + n
+        = 2^2 * T(n/2^2) + n + n
+        = 2^2 * [2T(n/2^3) + n/2^2] + 2n
+        = 2^3 * T(n/2^3) + 3n
+        = 2^k * T(n/2^k) + kn 
+    
+    -- it will run until n/2^k = 1 ---> k = log(n)
+    -- therefore, T(n) = 2^(logn) + nlogn = n + nlogn = O(nlog(n))
+
+
+
+
+
+
+Binary Search algorithm
+
+- iterative - O(logn)
+            int BinSearch(A,n,key)
+            {
+                l = 1, h = n;
+                
+
+                while(l <= h)
+                {
+                    mid = (l+h) / 2;
+                    if (key == A[mid])
+                    {
+                        return mid;
+                    }
+                    if (key < A[mid])
+                    {
+                        h = mid-1;
+                    }
+                    else
+                    {
+                        l = mid+1
+                    }
+                }
+                return -1;
+            }
+
+
+- recursive
+            int BinSearch(l, h, key)
+            {
+                if (l == h){
+                    if (A[l] == key){
+                        return l;
+                    }
+                    return -1;
+                }
+                else
+                {
+                    mid = (l + h) / 2;
+                    if (key == A[mid]) {
+                        return mid;
+                    }
+                    if (key < A[mid]) {
+                        return BinSearch(l, mid-1, key)
+                    }
+                    else 
+                    {
+                        return BinSearch(mid+1, h, key)
+                    }
+                }   
+            }
+
+
+
+
+
+
+
+Heap
+
+
+- definition
+    -- full binary tree: every parent node has two child notes
+    -- complete binary tree: representing the binary tree as an array, there's no gap between any given nodes
+                             it is a full binary tree up to level h-1, and fill the last level from left to right without any node missing
+    -- max Heap
+        --- complete binary tree 
+        --- parent node always greater than child nodes 
+
+- insertion for max heap (from leaf to root) - O(log(n))
+    -- insert the node to the left most possible position on the lowest level nodes (locate the lowest layer, insert to the left most position)
+    -- compare against the parent node, if the new node is greater, swap them 
+
+- delete root node from max heap (from root to leaf) - O(log(n))
+    -- delete the root node (the parent at the highest level, top of the tree)
+    -- move the node to the right most possible position on the lowest level nodes (locate the lowest layer, swap the right most node)
+    -- go to one level lower, then compare the two child, then compare the larger child with the parent node, if the child is larger, swap
+    -- repeat until last level 
+
+
+- creating heap from array
+    -- create a root node with the first element of the array 
+    -- use "insertion for max heap" method to insert each element from the array to create max heap tree 
+    -- time complexity: O(nlog(n)) - performed n insertions where each with max log(n) time: height of the tree 
+
+- heap sort - O(nlog(n))
+    -- create a heap tree 
+    -- perform deletion of the root node, place it to the last empty space outside of heap array
+        assume there's a heap array size of 7, after deleting the root node, the side of the heap array becomes 6, and there's an empty space outside
+        of the heap array, place the deleted root node there 
+    -- perform deletion of the root node again, place it to the second last empty space outside of heap array 
+        after another deletion, the heap array becomes 5 with two spaces outside, the last one is filled by previous deleted node, fill the second
+        last space with the current deleted root node 
+    -- repeat until heap array is empty, then we will have a sorted array
+
+
+- heapify: to adjust elements so the tree is a max heap - O(n)
+    -- start from right most node on the lowest level (i.e., if represent the tree as an array, start from the right most element) 
+    -- move through the array one at a time from right to left, at each time, treat the node as the root of a smaller tree, perform swap if child > parent
+    -- end when finished with the first element from the array 
+    -- each operation is comparable to the operation of deletion described above 
+
+
+
+
+
+
+
+
+
+Merge Sort - combine two sorted list into one 
+
+
+- iterative solution (2 lists) - O(m+n)
+    -- define two pointers pointing at each sorted list 
+    -- define an empty list 
+    -- move pointers for the lowest of the two values the pointers are pointing at, then put the value into the new list
+    -- dump all the remaining elements of the list while the pointer for the other list reached the end
+
+    -- m-way merging
+        --- merge pairs of two lists at a time (e.g., merge A&B, C&D, then a final merge)
+        --- merge A&B, then merge the new list with C, then merge the new list with D 
+    
+
+- 2-way merge sort (1 list) - O(nlog(n)) - n sorts every iteration, log(n) number of iterations 
+    -- iterative process 
+    -- 1st iteration: treat every two pairs of elements as a seperate list and perform traditional 2 way merge sort, produce n/2 number of sorted lists 
+    -- 2nd iteration: perform traditional 2 way merge sort to every pairs of new lists, result in n/4 number of sorted lists
+    -- repeat until a single sorted list left 
+
+
+
+- merge sort - recursive approach - O(nlog(n))
+            Algorithm MergeSort(l, h)
+            {
+                if (l<h)
+                {
+                    mid = (l+h)/2;
+                    MergeSort(l, mid);
+                    MergeSort(mid+1, h);
+                    Merge(l, mid, h);     <---------------------------- two way merge sort 
+                }
+            }
+
+
+- pros 
+    -- can use external sorting for large amount of elements 
+    -- stable: it maintains the original position of same elements (e.g., there are two 8s, the first 8 will remain first position in the sorted list)
+
+- cons 
+    -- extra space (not inplace sort)
+    -- much slower for smaller lists (n <= 15)
+        --- used in conjunction with insertion sort or bubble sort 
+    -- recursive: use stack that depends on the height of the tracing tree (log(n))
+        --- space needed: n + log(n) - size of extra empty list + tracing tree
+
+
+
+
+
+
+
+Quick Sort 
+
+
+- for one iteration
+    -- take a pivot (usually the first element of the list), and find it's correct location
+        --- i.e., all numbers from its left should be less than the pivot, and all numbers from the right should be larger than the pivot 
+    -- use two pointers i, and j pointing at the next element of the pivot (i) and the last element of the list (j) 
+    -- move the i pointer to the right until locating a number greater than the pivot 
+    -- move the j pointer to the left until locating a number smaller than the pivot
+    -- swap i-th element with j-th element 
+    
+    -- keep moving the two pointers until 
+        --- j < i: end this iteration and swap j-th element with the pivot
+    -- the pivot is at the sorted position
+
+
+
+
+
+
+
+
+
+
+
+

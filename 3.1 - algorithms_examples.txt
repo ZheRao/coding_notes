@@ -1,0 +1,168 @@
+Problem: Longest Substring Without Repeating Characters
+    given a string s, find the length of the longest substring without repeating Characters
+        e.g., "abcabcbb" --> 3, "bbbbb" --> 1, "pwwkew" --> 3
+    Solution
+        - idea: use two pointers and ensure lengths is calculated only when there's no repeating chars with tracking occureences of chars (with index) in a dictionary
+            -- the left pointer will move to the right of repeating chars to ensure there is no repeating chars in the interval
+        - loop: the right pointer r goes through every index of the string, left pointer l is initialized to be 0, for each r:
+            -- extract the current char with index r,
+            -- decide between calculating length or move the left pointer l
+                --- if current char has been seen before (i.e., repeating) & the position of repeating char recorded in the dictionry is >= left
+                    move the left pointer l one index after the last recorded repeating char
+                --- else
+                    calculate length and pick the max between current length and past length, current length = r - l + 1
+            -- record (or update) the last seen position of the current char to r
+
+
+Problem: Median of Two Sorted Arrays
+    - given two sorted arrays nums1 and nums2 of size m and n, return the median of the two sorted arrays
+        -- e.g., nums1 = [1, 3] nums2 = [2] --> 2
+    - solution idea: find left-most partition contains half of two array merged, depends on whether calculate median or not, return the corresponding numbers
+    - part 1: core algorithm
+        -- assuming nums2 is the smaller array
+        -- assign 3 active pointers to nums2, and one passive pointer to nums1
+            --- for nums2, initialize lp2 (left pointer for nums2) as 0, rp2 as len(nums2) - 1, and mp2 as (lp2+rp2) // 2
+            --- for nums1, mp1 is the length of the entire left partition subtract the length of nums2[0:mp2+1] - the left partition of nums2, finally minus 1 for indexing
+        -- the left partition of nums2[:mp2+1] and left partition of num1[:mp1+1] constitute the entire left partition of marged array, now need to make sure partitions are correct
+            --- condition1: the first element after the nums1 partition should be larger than the last element from nums2 partition
+                ---- nums1[mp1+1] >= nums2[mp2]
+                ---- if this condition is not met, mp2 should move left (compare larger number in nums1 to smaller numer in nums2)
+                ---- rp2 = mp2 - then recalculate mp2, mp1, reevaluate
+            --- condition2: the last element in the nums1 partition should be smaller than the first element after the nums2 partition
+                ---- nums1[mpt1] <= nums2[mp2+1]
+                ---- if this condition is not met, mp2 should move right
+                ---- lp2 = mp2 + 1 - the + 1 is to avoid infinite loop in the edge case where lp2 = rp2 - 1, then mp2 will always be lp2
+            --- use a while loop until both conditions are met or an edge case occurs
+                ---- edge case 1: rp2 = 0 (running out of numbers in nums2 partition from left side, all numbers in nums2 are too big - include nothing)
+                ---- edge case 2: lp2 = len(nums2) - 1 (all numbers in nums2 are too small - include everything)
+    - part 2: when conditions are met
+        -- the left partitions include left partitions of the entire merged array
+        -- if length of the merged arrays is even - need to calculate median
+            --- return average between max(nums1[mp1], nums2[mp2]) and min(nums1[mp1+1], nums2[mp2+1])
+        -- if length of odd
+            --- return min(nums1[mp1+1], nums2[mp2+1])
+    - part 3: edge cases 
+        -- case 1: rp2 = 0
+            --- if len(nums1) == len(nums2) - return average between nums1[-1] and nums2[0]
+            --- if calculate median: return average between nums1[mp1] and min(nums1[mp1+1],nums2[0])
+            --- return min(nums1[mp1+1],num2[0])
+        -- case 2: lp2 = len(nums2) - 1
+            --- if len(nums1) == len(nums2) - return average between nums1[0] and nums2[-1]
+            --- if calculate median: return average between max(nums1[mp1],nums2[-1]) and nums1[mp1+1]
+            --- return nums1[mp1+1]
+
+
+
+
+Problem: Add Two Numbers
+    - given two non-empty linked list representing two non-negative integers. digits stored in reverse order, add them up and store them in a linked list (reversed order)
+        -- examples: l1 = [2,4,3], l2 = [5,6,4], output = [7,0,8], explanation: 342+465 = 807
+    - definition of linked list
+            class ListNode(object):
+                def __init__(self, val=0, next=None):
+                    self.val = val
+                    self.next = next
+    - solution idea: convert [2,4,3] to 342, [5,6,4] to 465, add numbers then convert back to list [7,0,8]
+        -- part 1: convert linked list to list: go through each node until next pointer is None, append values in a list
+                def LinkedListtoList(l):
+                    mylist = []
+                    while l.next:
+                        mylist.append(l.val)
+                        l = l.next
+                    mylist.append(l.val)
+                    return mylist
+        -- part 2: convert list to string (so it can be easily reversed), then convert it to integer
+                def listToInt(l):
+                    string_list = list(map(str,l))
+                    string = "".join(string_list)
+                    return int(string[::-1])
+        -- part 3: add numbers up
+                num1 = listToInt(LinkedListtoList(l1))
+                num2 = listToInt(LinkedListtoList(l2))
+        -- part 4: convert integer to string_list (without reversing because creating linked list requires right to left): 
+                def intToStringList(n):
+                    string_list = list(str(n))
+                    return string_list
+                total = intToStringList(num1 + num2)
+        -- part 5: convert the string_list to linked list
+                def stringListtoListNode(string_list):
+                    node = ListNode(val=int(string_list[0]),next=None)
+                    for i in range(1,len(string_list)):
+                        node = ListNode(val=int(string_list[i]),next=node)
+                    return node
+    - alternative solution
+        -- idea: addition of first number from both lists is the result of the last digit before flipping, after flipping the final result, it becomes the first digit
+                    [2,4,3] + [5,6,4] - digit1: 2 + 5 = 7 - digit2: 4 + 6 = 0 carry 1- digit3: 3 + 4 + 1 = 8 --> [7, 0, 8]
+        -- implementation
+                def addTwoNumbers(self, l1, l2):
+                    digit1 = 0 if l1 is None else l1.val
+                    digit2 = 0 if l2 is None else l2.val
+                    nodes = ListNode(val=(digit1+digit2)%10)
+                    current_node = nodes
+                    carry = (digit1+digit2) // 10
+                    l1 = l1.next if l1 else None
+                    l2 = l2.next if l2 else None
+
+                    while l1 or l2 or carry != 0:
+                        digit1 = 0 if l1 is None else l1.val
+                        digit2 = 0 if l2 is None else l2.val
+                        next_node = ListNode(val=(digit1+digit2+carry)%10)
+                        carry = (digit1+digit2+carry) // 10
+                        current_node.next = next_node
+                        current_node = next_node
+                        l1 = l1.next if l1 else None
+                        l2 = l2.next if l2 else None
+                    return nodes
+
+
+Problem: Two Sum - run time = O(n)
+    - given an array of integers and an target, return indices of the two numbers such that they add up to target
+        -- nums = [2,7,11,15], target = 9 --> [0, 1]
+    - solution idea (built in functions used): sort the list, two pointers pointing at first and last of the list, if sum too big, move right pointer, if sum too small, move left pointer, then search for original index from unsorted list
+            sorted_list = list(sorted(nums))
+            left_pointer = 0
+            right_pointer = len(nums) - 1
+            while left_pointer < right_pointer:
+                num1 = sorted_list[left_pointer]
+                num2 = sorted_list[right_pointer]
+                sum = num1+ num2
+                if sum > target:
+                    right_pointer -= 1
+                elif sum < target:
+                    left_pointer += 1
+                else:
+                    left_pointer = nums.index(num1)
+                    if num1 == num2:
+                        right_pointer = nums.index(num2,left_pointer+1)
+                    else:
+                        right_pointer = nums.index(num2)
+                    return [left_pointer, right_pointer]
+    - vs. alternative: using a hash table
+        -- create a hash table containing {nummber: index} for numbers I have iterated through, if there exists a number from the hash table that add current number equals the target, return the indicies
+                def twoSum(self, nums, target):
+                    history = {}
+                    for i in range(len(nums)):
+                        difference = target - nums[i]
+                        if difference in history.keys():
+                            return [history[difference], i]
+                        else:
+                            history[nums[i]] = i
+
+
+
+Porblem: longest Palindromic Substring
+    - given a string s, return the longest palindromic substring in search
+        -- s = "babab" --> "bab"
+    - idea: for every position pointer1, locate end of repetition of the character with pointer2, then expand both ways with pointer3 and pointer4 to find palindromic
+    - algorithm: (for pointer1 < len(s) - 1 - don't need to point at last char, already checked)
+        -- initialize palindrome as the s[0] with longest_len being 1 - to deal with the edge case where s has a length of 1
+        -- initialize pointer1 = 0 and pointer2 = pointer1
+        -- while s[pointer1] == s[pointer2] and pointer2 < len(s): pointer2 += 1 - find end of repeating chars, when it finishes, pointer2 would point at one place after the last repeating char
+        -- initialize pointer3 = pointer1 - 1 and pointer4 = pointer2
+        -- if pointer1 == 0 - cannot search with pointer3, check with longest record then continue with next pointer1
+        -- while pointer3 > -1 and pointer4 < len(s): if s[pointer4] != s[pointer3]: break, else: pointer4 += 1 and pointer3 -= 1, should exclude pointer3 and pointer4 chars
+        -- check with recorded palindrome, update if necessary
+        -- pointer1 += 1 and pointer2 = pointer1
+
+
+

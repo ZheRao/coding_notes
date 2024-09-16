@@ -1,0 +1,264 @@
+
+
+1. PyTorch Basics
+    - tensors 
+        -- tensor creation with option for dtype argument 
+            --- torch.rand(size = (3,4))                        - random number from Uniform distribution
+            --- torch.randn(size = (3,4))                       - random number from Normal distribution 
+            --- torch.randint(low=0,high=1,size=(3,4))          - random integer between low and high
+            --- torch.zeros(size=(3,4)) / torch.ones(size=(3,4)) / torch.zeros_like(a)
+            --- torch.arange(1, 10, 3)                          - [1,4,7,10]
+        
+        -- data types
+            --- a.long() - convert torch tensor a from float(usually) to int64
+            --- a.float() - convert torch tensor a from int(usually) to float32
+            --- b = a.type(torch.float16) 
+        
+        -- special tensor operation
+            --- a @ b   - matrix multiplication
+            --- a * b   - element-wise multiplication 
+            --- a.T     - transpose of a 
+
+        --  aggregation
+            --- a.min()/mean()/sum()
+            --- a.argmin() - the index position at which the lowest value in the tensor is stored 
+
+        -- shaping tensors 
+            --- x.reshape(*new_dim)
+            --- x.view(*new_dim)            - similar as reshape, but share the same memory, instead of creating a new entity
+            --- torch.stack([x, y], dim=0)  - stack tensors 
+                    x, y must be the same size, assume (1, a)
+                    dim = 0 -----> stack on top of each other                                   - size (2, a) 
+                    dim = 1 -----> stack on top of each other, then transpose                   - size (a, 2)
+            --- x.squeeze()                 - remove all single dimensions from a target tensor
+            --- x.unsqueeze(dim=0)          - add a single dimension to the tensor at 0th dimension 
+            --- x = x.permute(2, 0, 1)      - rearrange dimensions, put last dimension as first dimension 
+        
+        -- extract tensor element
+            --- a[0].detach().cpu().numpy().item()
+
+
+    - common functions
+        
+        -- working with NumPy 
+            --- array = np.arange(1., 8.) + tensor = torch.from_numpy(array) 
+            --- numpy_tensor = tensor.numpy()
+
+        -- reproducibility 
+            --- torch.manual_seed(2024)
+                {
+                    code blocks
+                } 
+
+        -- device & check device 
+            --- device = "cuda" if torch.cuda.is_available() else "cpu"
+            --- next(model.parameters()).device
+
+        -- torch.cat((a,b), dim=0) - concatenate two tensors along the 0th dimension
+
+        -- save & load models
+            --- torch.save(model.state_dict(), PATH)
+            --- model.load_state_dict(torch.load(PATH))
+    
+
+    - inspect network 
+        -- parameters 
+            --- model.parameters()
+    
+
+
+    - common practice for train and test loop
+        -- with torh.inference_mode() - set up inference mode for testing/validating
+        -- pred_labels = torch.round(model_output) - get predicted labels for binary classification
+        -- pred_labels = model_output.argmax(dim=1) - ....................... multiclass classification
+        -- opotimizer.zero_grad() - clear cache of optimizer (previous gradients)
+        -- loss.backward() - backpropagation
+        -- optimizer.step() - parameter updates
+        -- torch.eq(tensor1, tensor2).sum().item() - calculating correct predictions
+        -- tqdm 
+            --- from tqdm.auto import tqdm 
+            --- progress_bar = tqdm(range(total_steps))
+            --- progress_bar.update(1)
+    
+    
+    
+    
+    
+    
+
+
+
+
+2. Creating Neural Networks
+
+    - torch.nn 
+                    class neural_network(torch.nn.Module):
+                        def __init__(self):
+                            super(neural_network).__init__()
+                            self.weights = nn.Parameter(torch.randn(1, requires_grad=True, dtype=torch.float))
+                            self.bias = nn.Parameter(torch.randn(1, requires_grad=True, dtype=torch.float))
+                        def forward(self, model_input)
+                            return self.weights * model_input + self.bias
+
+
+
+
+
+
+
+
+3. Libraries
+    
+    - torch.nn 
+
+        -- nn.Module                    - neural network parent module (backbone)
+        -- nn.Parameter                 - create trainable parameters for the network
+
+        -- built-in layers
+            --- nn.Linear(in_features, out_features)
+            --- nn.Flatten()
+
+            --- nn.Conv2d(in_channels, out_channels, kernel_size, stride, padding, device, dtype)
+            --- nn.ConvTranspose2d(in_channels, out_channels, kernel_size, stride, padding, device, dtype)
+            --- nn.MaxPool2d(kernel_size, stride, padding)
+            --- nn.AvgPool2d(kernel_size, stride, padding)
+
+            --- nn.BatchNorm1d(num_features) - expected inputsize = (N, C) or (N, C, L) 
+            --- nn.BatchNorm2d(num_features) - expected inputsize = (N, C, H, W)
+            --- nn.LayerNorm(normalized_shape) 
+
+            --- nn.Dropout(p=0.5)
+
+            --- nn.Embedding(num_embeddings, embedding_dim)
+                    initialize a weight matrix of size (num_embeddings, embedding_dim)
+                    embed a token n (< num_embeddings) is accessing the n-th row of the weight matrix
+
+            --- nn.Sequential(
+                        nn.Linear(2,8),
+                        ...
+                    )
+        
+        -- built-in activations
+            --- nn.ReLU(inplace = False)
+            --- nn.LeakyReLU(negative_slope = 0.01, inplace = False)
+            --- nn.Sigmoid()
+            --- nn.Tanh()
+            --- nn.Softmax(dim = -1)
+            
+
+        
+
+        -- built-in loss functions 
+            --- nn.L1Loss()(input, target)             
+            --- nn.MSELoss()(input, target)
+
+            --- nn.CrossEntropyLoss(weight, reduction)(input, target)                             - apply built-in softmax (expect unnormalized logits)
+                    weight ---> array of num_of_class length, represent weight in each category
+                    reduction = 'mean'/'sum' ----> average or accumulate batch loss 
+                    input size = (batch, num_of_class) or (num_of_class) 
+                    output size = (batch) or (), i.e., one dimensional tensor
+            
+            --- nn.BCELoss(weight, reduction="mean")                                                - without built-in sigmoid activation 
+            --- nn.BCEWithLogitsLoss(weight,reduction="mean")                                       - preferred, stable, with sigmoid activation 
+    
+
+
+    - torch.optim 
+
+        -- optimizer = optim.Adam(model.parameters(), lr, betas=(0.9, 0.999))
+                Adam maintains a moving average of mean and variance for the gradient updates for batches
+                The goal is to make parameter updating smooth even when different data batches pointing at different updating directions 
+                Higher the betas, more weights given to the moving average 
+    
+
+    - torchvision
+
+        -- torchvision.datasets 
+        -- torchvision.models 
+        -- torchvision.transforms 
+        -- torchvision.ops 
+            --- nms - non-max suppression 
+    
+
+    - torch.utils 
+
+        -- torch.utils.Dataset 
+        -- torch.utils.data.DataLoader
+        
+        -- torch.utils.data.RandomSampler
+            --- arg: dataset, replacement, num_samples 
+        -- torch.utils.data.SubsetRandomSampler 
+            --- need to define train_idx and val_idx
+    
+    - torch_summary 
+        -- from torchsummary import summary 
+        -- summary(model, torch.zeros(input_size))
+
+
+
+
+
+
+
+
+
+
+
+
+3. Dataset
+
+    - Image dataset
+        -- __init__ --> store image folder path, transform, and list of all file names in folder
+        -- __len__ --> return number of files in the folder
+        -- __getitem__ (idx)
+            1. construct complete path of a image (corresponding to idx)
+            2. read image data
+            3. apply transformation
+            4. return image
+
+
+
+
+4. Conceptual
+
+    - Convolutional dimensions calculation
+        - define
+            -- input dimension = i
+            -- kernel size = k
+            -- stride size = s 
+            -- padding size = p 
+            -- output dimension = o 
+
+        - convolutional layer calculation
+            -- o = (i + 2p - k) / s + 1
+
+        - transposed covolutional layer calculation
+            -- o = (i - 1) * s + k - 2p
+
+
+
+
+
+4. Additional Library 
+
+    Pycocotools
+        from pycocotools.coco import coco
+
+        define
+            - annotation_path = "........../captions_train2017.json"
+            - image_directory = "........../images/train2017"
+            - coco = COCO(annotation_path)
+
+        coco keys
+            - anns
+            - dataset, cats, imgs, imgToAnns, cattoImsgs
+
+        anns
+            - anns.keys ---> indicies, or id (for dataset and dataloader) --> e.g., [37, 49, 89, 98, 101]
+            - coco.anns[id] ---> {'image_id': 2222, 'id': 2, 'caption': "abcdefg"}
+            - coco.loadImgs(image_id)[0] ----> {'license':x, 'file_name': '000002155.jpg',
+                                                'height':480, 'width':460, 'date_captured',
+                                                'coco_url','flickr_url','id'}
+
+        access image through file_name and image_directory
+            - Image.open(path.join(dir,file_name)).convert("RGB")

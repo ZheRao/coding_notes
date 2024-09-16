@@ -1,0 +1,143 @@
+
+
+Basic of Object Detection & R-CNN 
+
+- step 1: region proposals 
+    -- input: original image 
+    -- output: high number of proposals 
+        --- bounding boxes that potentially contains objects with SelectiveSearch
+
+
+- step 2: CNN 
+    -- resize all proposals to the same size 
+    -- pass each proposal through the network 
+
+    -- input (single pass-through): processed proposal (partial immage) with coordinates identifying the bounding box for the proposal 
+
+    -- output: (only when the proposal has an IoU larger than some threshold )
+        --- prediction of the object contained in the proposal (e.g., [0, 0, 0, 1] represents class: boat)
+        --- offset of the bounding box. i.e., modification to the 
+                -> center of original bounding box (dx, dy)
+                -> height and width of the bounding box (dw, dh)
+            to more closely surround the object (better align with the object)
+    
+    -- loss functions 
+        --- self.cel = nn.CrossEntropyLoss()    -----> classification loss 
+        --- self.sl1 = nn.L1Loss()              -----> bounding box offset loss 
+
+
+
+- details
+    -- classification layer 
+            self.cls_score = nn.Linear(feature_dim, len(labels))
+    
+    -- bounding box offset layer 
+            self.bbox = nn.Sequential(
+                nn.Linear(feature_dim, 512),
+                nn.ReLU(),
+                nn.Linear(512, 4), 
+                nn.Tanh()
+            )
+    
+        --- use of tanh activation
+            1. bounding output: not expecting drastic change in offset
+            2. the regional proposal is normalized
+            3. stabilizing training
+
+
+- preparation of training data 
+    -- use SelectiveSearch to generate candidates for a given image (cx, cy, cX, cY), while maintain the ground truth (_x, _y, _X, _Y)
+    -- for each candidate, if IoU against the ground truth, assign a label to the candidate and record the normalized offset 
+        --- normalized offset = [_x-cx, _y-cy, _X-cX, _Y - cY] / [W, H, W, H]
+        --- H, W, _ = image.shape
+
+
+- step 3: inference: input --> img 
+    -- create candidates with SelectiveSearch 
+    -- for each candidate: 
+        --- resize 
+        --- normalize 
+    -- get output by passing candidates to R-CNN model, consists of 
+        --- probs
+                probs = torch.nn.functional.softmax(probs, -1)
+                confs, clss = torch.max(probs, -1)
+        --- deltas
+    -- filter out candidates that are class "background"
+    -- create bounding boxes with 
+        --- bbs = (candidates + deltas * [W, H, W, H]) 
+    -- apply non-max suppression to eliminate duplicating boxes 
+        --- pairs of boxes that have an IoU > 0.05 consider duplicates 
+        --- pick the box with the highest confidence 
+        --- ixs = torchvision.ops.nms(torch.tensor(bbs), torch.tensor(confs), 0.05)
+
+
+
+
+
+
+
+
+Fast R-CNN
+
+
+- idea 
+    -- instead of passing croped and resized region proposals to the network, pass the entire image
+    -- the network extract features and fetch the region of the features that correspond to the region proposals (obtained from SelectiveSearch)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Explanation
+
+- bounding box contains (min_X, min_Y, max_X, max_Y)
+
+- IoU: intersection of Union
+    -- IoU of two bounding boxes calculates the portion of union of the boxes compared to the total area of bounding boxes
+    -- IoU = area_overlap / (area_combined + epsilon)
+
+- Non-max suppression
+    -- deal with the issue where multiple region proposals are generated but significantly overlap each other
+    -- goal: discard boxes that do not contain the highest probability of containing an object 
+    -- use nms function from torchvision.ops module
+
+
+
+
+
+
+
+
+
+

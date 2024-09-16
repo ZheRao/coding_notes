@@ -1,0 +1,121 @@
+input shape (3,128,128)
+
+initial_conv
+    - 64 7x7 kernel convolution with 3 padding, 1 stride ---> (64,128,128)
+        -- batchnorm and leakyReLU
+    - 128 8x8 kernel convolution with 3 padding, 2 stride ---> (128,64,64)
+        -- batchnorm and leakyReLU
+
+block_1 - input (128,64,64)
+    - small chunk
+        -- 256 1x1 kernel, 0 padding, 1 stride, batchnorm ---> (256,64,64)
+    - big chunk
+        -- 64 1x1 kernel, 0 padding, 1 stride, batchnorm&leakyReLU ---> (64,64,64)
+        -- 64 3x3 kernel, 1 padding, 1 stride, batchnorm&leakyReLU ---> (64,64,64)
+        -- 256 1x1 kernel, 0 padding, 1 stride, batchnorm ---> (256,64,64)
+    - add up ---> (256,64,64)
+        -- leakyReLU + dropout
+
+block_2 (can repeat) - input (256,64,64)
+    - small chunk
+        -- identity (256,64,64)
+    - big chunk
+        -- 64 1x1 kernel, 0 padding, 1 stride, batchnorm&leakyReLU ---> (64,64,64)
+        -- 64 3x3 kernel, 1 padding, 1 stride, batchnorm&leakyReLU ---> (64,64,64)
+        -- 256 1x1 kernel, 0 padding, 1 stride, batchnorm ---> (256,64,64)
+    - add up ---> (256,64,64)
+        -- leakyReLU + dropout
+
+block_3 - input (256,64,64)
+    - small chunk
+        -- 512 1x1 kernel, 0 padding, 2 stride, batchnorm ---> (512,32,32)
+    - big chunk
+        -- 128 1x1 kernel, 0 padding, 1 stride, batchnorm&leakyReLU ---> (128,64,64)
+        -- 128 3x3 kernel, 1 padding, 2 stride, batchnorm&leakyReLU ---> (128,32,32)
+        -- 512 1x1 kernel, 0 padding, 1 stride, batchnorm ---> (512,32,32)
+    - add up ---> (512,32,32)
+        -- leakyReLU + dropout
+
+block_4 (can repeat) - input (512,32,32)
+    - small chunk
+        -- identity (512,32,32)
+    - big chunk
+        -- 128 1x1 kernel, 0 padding, 1 stride, batchnorm&leakyReLU ---> (128,32,32)
+        -- 128 3x3 kernel, 1 padding, 1 stride, batchnorm&leakyReLU ---> (128,32,32)
+        -- 512 1x1 kernel, 0 padding, 1 stride, batchnorm ---> (512,32,32)
+    - add up ---> (512,32,32)
+        -- leakyReLU + dropout
+
+block_5 - input (512,32,32)
+    - small chunk
+        -- 1024 1x1 kernel, 0 padding, 2 stride, batchnorm ---> (1024,16,16)
+    - big chunk
+        -- 256 1x1 kernel, 0 padding, 1 stride, batchnorm&leakyReLU ---> (256,32,32)
+        -- 256 3x3 kernel, 1 padding, 2 stride, batchnorm&leakyReLU ---> (256,16,16)
+        -- 1024 1x1 kernel, 0 padding, 1 stride, batchnorm ---> (1024,16,16)
+    - add up ---> (1024,16,16)
+        -- leakyReLU + dropout
+
+block_6 (can repeat) - input (1024,16,16)
+    - small chunk
+        -- identity (1024,16,16)
+    - big chunk
+        -- 256 1x1 kernel, 0 padding, 1 stride, batchnorm&leakyReLU ---> (256,16,16)
+        -- 256 3x3 kernel, 1 padding, 1 stride, batchnorm&leakyReLU ---> (256,16,16)
+        -- 1024 1x1 kernel, 0 padding, 1 stride, batchnorm ---> (1024,16,16)
+    - add up ---> (1024,16,16)
+        -- leakyReLU + dropout
+
+block_7 - input (1024,16,16)
+    - small chunk
+        -- 2048 1x1 kernel, 0 padding, 2 stride, batchnorm ---> (2048,8,8)
+    - big chunk
+        -- 512 1x1 kernel, 0 padding, 1 stride, batchnorm&leakyReLU ---> (512,16,16)
+        -- 512 3x3 kernel, 1 padding, 2 stride, batchnorm&leakyReLU ---> (512,8,8)
+        -- 2048 1x1 kernel, 0 padding, 1 stride, batchnorm ---> (2048,8,8)
+    - add up ---> (2048,8,8)
+        -- leakyReLU + dropout
+
+block_8 (can repeat) - input (2048,8,8)
+    - small chunk
+        -- identity (2048,8,8)
+    - big chunk
+        -- 512 1x1 kernel, 0 padding, 1 stride, batchnorm&leakyReLU ---> (512,8,8)
+        -- 512 3x3 kernel, 1 padding, 1 stride, batchnorm&leakyReLU ---> (512,8,8)
+        -- 2048 1x1 kernel, 0 padding, 1 stride, batchnorm ---> (2048,8,8)
+    - add up ---> (2048,8,8)
+        -- leakyReLU + dropout
+
+AveragePool - input (2048,8,8)
+    - kernel_size = 8, stride = 1
+    - output (2048,1,1)
+
+Faltten with start_dim = 1
+    - output (2048,)
+
+final linear - input (2048,)
+    - output (1000,)
+
+
+
+
+special note about generator (reverse of above network) - replicating block_7
+    - small chunk 
+        -- (3x3 kernel, 4 padding, 2 stride) or (2x2 kernel, 0 padding, stride 2)
+        -- choose the second one because smaller upsampling leads to finer details
+        -- also, more padding result in distortion against data
+    - big chunk
+        -- 1x1 kernel, 0 padding, 1 stride - same dimension
+        -- 2x2 kernel, 0 padding, 2 stride - 2x dimension or 4x4 kernel, 1 padding, 2 stride
+        -- 1x1 kernel, 0 padding, 1 stride - same dimension
+
+special note about generator (reverse of above network) - replicating block_8
+    - small chunk 
+        -- identity 
+    - big chunk
+        -- 1x1 kernel, 0 padding, 1 stride - same dimension
+        -- 3x3 kernel, 1 padding, 1 stride - same dimension
+        -- 1x1 kernel, 0 padding, 1 stride - same dimension
+
+
+    

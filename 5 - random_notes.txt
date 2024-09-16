@@ -1,0 +1,70 @@
+list_comprehension
+    - [(i,j) for i in range(2) for j in range(3)] ---> [(0,0),(0,1),(0,2),(1,0),(1,1),(1,2)]
+        -- i is in the outer loop and j is in the inner loop
+
+
+training simple GAN on celeb faces
+    - for the last layer of discriminator with input shape (4x4)
+        -- if use averagepool with kernel_size 4x4, the model performs very badly
+        -- if use another conv layer with kernel_size 4x4, stride = 1, padding = 0, the model performs much better
+    - for changing beta1 from 0.5 to 0.9
+        -- higher beta1 led to more weights given to past gradients when updating the moving average of the gradients' mean
+            this led to discriminator being overly sensitive to recent gradients, led to repi changes in its parameters
+            when discriminator's parameters are updated too rapidly, it quickly become too adapt at distinguishing True and False, led to d_loss converge to 0
+            this situation cause the graident signal passed back to the generator to become extremely weak or non-existent
+        -- intuitively, smaller beta means direction of current parameter updates more relied on current calculated gradient (more stable, but highly biased), 
+            so larger beta is more sutiable for later phase of training
+            more specifically, for a given parameter, imagine the learning process of a ball rolling down the hill, even though the current batch produced flat direction
+            for the gradient update, because the momentum of the past is steep downhill, the gradient update will still be downhill as opposed to being flat
+
+
+Initial Page Rank Algorithm
+    - Example: four websites, pointing at each other with: A -> B, C, D; B -> A, D; C -> A; D -> B, calculated
+    - Page Rank assign weights to each website based on the relevancy of the websites with iterations
+        -- weight_new = Matrix @ weight_old with weight_old initialized at [0.25,0.25,0.25,0.25], i.e., equal weights
+        -- Matrix is a square matrix with shape 4x4
+            --- the first column of the Matrix represents the presence of link between A and other nodes, so it should be [0, 0.33, 0.33, 0.33]
+            --- the first row of the Matrix represents the significance of A from other nodes (presence + importance), it should be [0, 0.5, 1, 0]
+                    the 1 came from the fact that C node only pointed at A, so the relevancy of A with repect to C is 1
+        -- After many iterations, the weights will converge and importance of the pages can be ranked according to the weights
+    - Drawback:
+        -- B has the highest rank because it has only in-links, and no out-links
+        -- B has the lowest rank because it has only out-links, and no in-links
+        -- If B link to itself, there would be a loop
+    - Fix:
+        -- use a buffer: weight_new = beta * N * weight_old + (1-beta) * f
+            --- beta is the click rate from users to the target website from out=links from other pages e.g., what's the percentage of traffic in B that came from clicking reference pages from other pages?
+            --- 1-beta: users accessing the target website not from the original website, e.g., if A -> B, what's the percentage of traffic in page B that came from user entering the page address?
+            --- f is a fixed value
+            --- this avoid reaching 0 or 1 for weights
+    - if we have 100B webpages, how to handle it? -> Map Reduce -> to count frequency
+
+Map Reduce
+    - I need to know the occurrence of words from a bunch of words
+    - Example: I have [A, B, R, C, C, R, A, C, B] as input
+        -- Split: I have three servers that can split the input into three cohort
+                    [A, B, R]
+                    [C, C, R]
+                    [A, C, B]
+        -- Map Phase: Perform count within each cohort
+                    A: 1, B: 1, R: 1
+                    C: 1, C: 1, R: 1
+                    A: 1, C: 1, B: 1
+        -- Shuffle and sort: make certain servers dedicated to process certain groups
+                    A: 1, A: 1
+                    B: 1, B: 1
+                    C: 1, C: 1, C: 1
+                    R: 1, R: 1
+        -- Reduce Phase
+                    A: 2
+                    B: 2
+                    C: 3
+                    R: 2
+
+
+
+
+
+
+
+

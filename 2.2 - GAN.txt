@@ -1,0 +1,38 @@
+definition
+    - define discriminator
+    - define generator
+    - define loss_fn --> nn.BCELoss
+    - define noise_generator --> randn(batch_size, dimension)
+    - define optimizer (for discriminator and generator)
+    - define image transformation
+    - define dataloader
+
+
+
+
+training discriminator
+    - param: disciminator, real_data, fake_data, loss_fn, optimizer
+    1. optimizer --> zero_grad
+    2. pred_real = discriminator prediction against real_data
+    3. real_loss = loss_fn(pred_real, list_of_ones.to(device)) - list_of_ones shape: (batch_size, 1)
+    4. pred_fake + fake_loss
+    5. real_loss, fake_loss, backpropogate separately + optimizer step
+
+training generator
+    - param: discriminator, fake_data, loss_fn, optimizer
+    1. optimizer --> zero_grad
+    2. pred_fake 
+    3. fake_loss = loss_fn(pred_fake, list_of_ones.to(device))
+    4. backpropogate + optimizer step
+
+overall training
+    - generator, discriminator, dataloader
+    1. get a batch of real_data, (detach) generate a batch of fake_data with generator
+    2. train_discriminator
+    3. (do not detach) generate another batch of fake_data 
+    4. train_generator
+
+
+observations:
+    - sometime, the learning rate for the generator should be much larger than the learning rate for the discriminator, 
+        or else discriminator becomes too good while generator doesn't get better quickly enough

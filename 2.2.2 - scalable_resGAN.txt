@@ -1,0 +1,93 @@
+Discriminator
+    - parameters: 
+        -- reduction, reduction_p2 (number of shrinking of image size, p2 for non-residual blocks)
+        -- repeat (number of repeat residual blocks for each image/feature size)
+        -- n_map (number of feature maps to start with)
+        -- img_size (input image size, assuming 3 channels)
+        -- divisor (size of dimensionality reduction inside residual block)
+        -- dropout (dropout rate)
+        -- relu (rate of decay for leakyReLU)
+        -- n_features, feature_dim (for minibatch discrimination)
+        -- minibatch_input_dim (number of input neurons for minibatch discrimination)
+    - calculations
+        -- max reduction based on image size
+            first reduction is min of max reduction and input reduction
+            second reduction is max of 0 or (min of input reduction_p2 and max reduction - input reduction_p1)
+        -- dimensionalities
+            normal conv block reduce feature map size by 2
+            only middle conv_layer of shrink bottleneck blocks in bottleneck block reduce feature map size by 2
+            normal conv block multiply number of feature maps by 2
+            bn blocks use out_dim // divisor to determine the middle_dim
+            bn blocks reduce features maps to middle_dim and expend back to out_dim
+        -- bn middle block
+            if require shrinking --> 4, 2, 1 (kernel, stride, padding)
+            if not require shrinking --> 3, 1, 1
+        -- other bn blocks
+            --> 1, 1, 0
+        -- normal blocks
+            --> 2, 2, 0
+    - example input (10,3,128,128) - parameters
+        -- reduction = 3, reduction_p2 = 2, repeat = 1
+        -- n_map = 64, n_features = 32, feature_dim = 8
+        -- minibatch_input_dim = 512
+    - initial conv layers
+        -- 1. (10,32,128,128)
+        -- 2. (10,64,64,64)
+    - initial bn layers
+        -- conv (10,128,64,64)
+        -- bn (10,32,64,64) - (10,32,64,64) - (10,128,64,64)
+    - reduction with bn blocks
+        -- conv blocks (10,256,32,32) - (10,512,16,16) - (10,1024,8,8)
+        -- bn blocks (10,256,32,32) - (10,512,16,16) - (10,1024,8,8)
+        -- conv blocks + bn_reduce_blocks - self + bn_repeat_blocks - repeat
+    - reduction_p2 with conv blocks
+        -- conv_layers - (10,1024,4,4) - (10,1024,2,2)
+        -- final conv reduces feature map size to 1 regardness of the size
+        -- (10,512,1,1)
+    - Flatten and minibatch discrimination
+        -- flatten (10,512)
+        -- minibatch linear (10,256)
+        -- reshape (10,32,8)
+        -- masked diff matix (10,32,10)
+        -- extract two feature matrices (10,32)
+        -- add (10,64)
+        -- merge back (10,576)
+    - final linear
+        -- (10, 576) - (10,1)
+
+
+Generator
+    - calculation
+        -- number of expansion is finding x such that end_dim / 2^x = start_dim
+            i.e., find number of times to multiply the features sizes so it reaches end_dim
+        -- n_map is the number of start maps that gaurantee the final number of blocks of bn blocks would be 32 at least
+            i.e., max(32^2 * num_expansion, input n_map)
+        -- final_n_map = n_map / 2^num_expansion >= 32
+        -- bn middle block
+            if require expanding --> 4, 2, 1 (kernel, stride, padding)
+            if not require expanding --> 3, 1, 1
+        -- other bn blocks
+            --> 1, 1, 0
+        -- normal blocks
+            --> 2, 2, 0
+    - example input (10,256)
+        -- start_dim = 8, end_dim = 128, n_map = 1024, repeat = 1
+    - reshape (10,256,1,1)
+    - initial transposed conv_layers
+        -- 1. (10,512,4,4) --> 4, 1, 0 (kernel_size, stride, padding)
+        -- 2. (10,1024,8,8) --> 4, 2, 1
+    - bn_repeat_blocks
+        -- 1. (10,1024,8,8) --> (10,2048,8,8) with 1, 1, 0
+        -- 2. (10,2048,8,8) --> (10,2048,8,8) with 3, 1, 1
+        -- 3. (10,2048,8,8) --> (10,1024,8,8) with 1, 1, 0
+    - bn_expand_blocks
+        -- 1. (10,1024,8,8) --> (10,1024,8,8) with 1, 1, 0
+        -- 2. (10,1024,8,8) --> (10,1024,16,16) with 4, 2, 1
+        -- 3. (10,1024,16,16) --> (10,512,16,16) with 1, 1, 0
+    - convT_blocks
+        -- (10,1024,8,8) --> (10,512,16,16) with 2, 2, 0
+    - expansion
+        -- (10,1024,8,8) - (10,512,16,16) - (10,256,32,32) - (10,128,64,64) - (10,64,128,128)
+    - final convT
+        -- (10,64,128,128) - (10,6,128,128) - (10,6,128,128) - (10,3,128,128)
+    

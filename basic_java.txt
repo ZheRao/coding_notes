@@ -1,0 +1,43 @@
+basic syntax
+    - create variable: int myvalue = Integer.MIN_VALUE, underflow = Integer.Min_Value - 1; --> 2147483647
+        -- myvalue = -2147483648, if subtract one from this value --> 2147483647 - underflow to maximum value
+        -- assign a number larger than the max integer to an int variable will result in error
+        -- alternative way to express integer - 2_147_483_647
+    - print: System.out.print("Integer Minimum Value = " + myvalue);
+
+
+Data Types
+    - whole numbers
+        -- Byte: range -128 to 127, take up less space and quicker to access - 8 bits
+        -- Short: range -32768 to 32767 - 16 bits
+        -- int (default): range -2147483648 to 2147483627 - 32 bits
+        -- Long: range -2^63 to 2^63 - 64 bits
+            long myvalue = 100L;
+    - casting: treating a variable of one type like a different data type
+        -- use (int) before return of the value
+        -- e.g., (byte) (myMinByteValue / 2);
+        -- short value = (-128/2); will work because although (-128/2) is an int (default type), the value is calculated first and see that it is within range
+        -- short value1 = -128; short value = (value1/2); will not work because value1 is int (tring to be assigned to short), and Java won't calculate it first to see whether it is within range
+    - real numbers
+        -- float: range 1.4E-45 to 3.4E38 - 32 bits
+            --- float num = 3.4f;
+        -- double (default): range 4.9E-324 to 1.798E308 - 64 bits
+    - string variables
+        -- char: holds only one character, enclosed in single quotes
+            --- 2 byptes (16 bits) of memory, has a width of 16
+            --- use unicode/numbers for chars: 
+                ---- char myUnicode = '\u0044' --> myUnicode ==> 'D';
+                ---- char myChar = 68 --> myChar ===> 'D';
+        -- string (not primitive datatype, but build-in classes): can hold multiple characters, enclosed in double quotes
+            --- String myString = "This is a string"; (capital first letter in declaration) 
+            --- with unicode - myString = "I wish I had \u00241,000,000" --> myString ==> "I wish I had $1,000,000"
+            --- if we add an Int/Double to a String, it converts Int/Double to String by default and concatenate both
+            --- String class is immutable, StringBuilder class is mutable, but does not share the String's special features
+    - boolean
+        -- can take on values of true or false
+
+
+Rules
+    - Data Types
+        -- you cannot assign a more precise data type (e.g., int) to a less precise data type (e.g., short) 
+        -- division of two int will return an int, e.g., 5 / 2 --> 2 as opposed to 5.0 / 2 --> 2.5

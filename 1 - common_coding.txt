@@ -1,0 +1,265 @@
+1. Common Practices
+    - list related
+        -- .item() - get a single number out of a list/tensor as a python regular int/float
+        -- set(list) - create a set object that contains unique values in the list
+        -- sorted(list) - create a list object that contains sorted values in the list
+        -- itemgetter(*index_list)(list) - retrieve multiple items from a list with a list of index, operator module
+        -- list(map(function, target)) - apply the function on elements of target
+        -- list.index(element, start, end) - locate index of element from start to end positions
+    
+    - object: Random
+        -- random.choice(list) - choose a random sample from the list
+        -- random.sample(list,k=n) - choose n random samples from the list
+    
+    - object: Dictionary
+        -- for key in dict or for key in dict.keys(): - retrieve the keys
+        -- for item in dict.items(): - retrieve the entire pairs, e.g., (key1, item1)
+        -- dict.get(key,alt_value) - retrieve value from key, if not found, return alt_value
+        -- itemgetter(*keys)(dict) - retrieve items corresponding to the keys
+        -- with open(path, "wb") as f: pickle.dump(dict,f) - save Dictionary
+        -- with open(path, "rb") as f: dict=pickle.load(f) - load Dictionary
+        -- max(stats, key=dict.get) - retrieve the value where the key is the largest
+        -- sorted(dict.items(),key=lambda x: x[1], reverse=True) - sort dictionary based on value
+    
+    - copy files with shutil
+        -- shutil.copyfile(path_from,path_to)
+    
+    - Try and Assert
+        -- assert condition, "message"
+        -- try, except
+            try:
+                condition
+            except:
+                action if condition fail
+            else:
+                action if condition didn't fail
+            finally:
+                action regardless of condition
+    
+    - object: tqdm
+        from tqdm.auto import tqdm
+        -- progress_bar = tqdm(range(num_steps))
+        -- progress_bar.update(step)
+    
+    - object: string
+        -- string.find(pattern,start,end) - find the index where the pattern occurred
+        -- "a d c b".split(" ") ---> ["a", "d", "c", "b"]
+        -- "|".join(["a", "b", "c"]) ---> "a|b|c"
+        -- string.strip() - removing leading and trailing white spaces
+
+    - Zip
+        -- list(zip([1,2], [11,22])) --> [(1,11),(2,22)]
+    
+    - pip install to a different location
+        -- pip install --target=path library_to_be_installed
+    
+    - enforcing argument data type
+        from typing import Optional
+        -- def fn(text:Optional[str]) - forcing it to be string or None type
+        from typing import Union
+        -- def fn(value:Union[str, int]) - forcing it to be string or integer
+    
+    - object: Numpy
+        -- saving and loading
+            with open("test.npy", "wb") as f:
+                np.save(f,np.array([1,2]))
+                np.save(f,np.array([3,4]))
+            with open("test.npy","rb") as f:
+                a = np.load(f)
+                b = np.load(f)
+            print(a, b) --> [1,2] [3,4]
+    
+    - object: Path from pathlib
+        -- p = Path("C:\\A\\B\\c.exe")
+        -- str(p.parent) --> "C:\\A\\B"
+        -- p.name --> "c.exe"
+        -- p.suffix --> ".exe"
+        -- p.parts --> ("C:\\", "A", "B", "c.exe")
+        -- p.relative_to("C:\\A") --> WindowsPath("B/c.exe")
+        -- p.exists() --> True
+
+    - write out as txt files
+        -- if os.path.exists(path): os.makedirs(path)
+        -- f = open(path,"w"/"a") - overwrite everything and create new file/append or create new file
+        -- f.write(message)
+        -- f.close()
+
+
+
+
+2. Pandas
+
+    - data frame creation
+        -- df = pd.DataFrame(data = [[1,2,3], [4,5,6]], columns=["col1", "col2", "col3"], index = ["row1", "row2"])
+        -- df = pd.read_csv(path)
+        -- df = pd.read_parquet(path)  ------> more storage efficient type
+        -- df = pd.read_excel(path, sheet_name = "sheet1")
+
+    
+    - inspecting data frame 
+        -- df.columns / list(df.index)
+        -- df.info() / df.describe()
+        -- df.shape / df.size
+        -- df.head(n) / df.tail(n)
+        -- df.sample(n, random_state=seed_number)
+
+    
+    - querying data 
+        -- df["col1"].unique()
+        -- accessing columns/items
+            --- df.iloc[:,1:6] / df.loc[:,["col1", "col2"]]
+            --- df.col1 / df["col1"]
+            --- df.at[0,"col1"] -----> more efficient single access
+
+        -- conditioning
+            --- df.loc[df["sales"]>=5000, ["itemID","sales"]]
+            --- df[df["sales"]>=5000][["itemID","sales"]]
+            --- df[(df["sales"]>=5000) & (df["cost"]==30)]
+
+        -- alternative conditioning
+            --- df.query(' country=="USA" and state=="New York" ')
+
+        -- string related conditioning
+            --- df[df["name"].str.contains("fire|pen",case=False,regex=True)]
+            --- .str.startwith()
+
+        -- .isin 
+            --- df[df["country"].isin(["USA", "UK"])]
+        
+        -- .isna() / .notna()
+            --- df[~df["col1"].isna()]
+        
+    
+    - modifying data
+        -- df.sort_values(["col1","col2"], ascending=[0,1]) ------> sort col2 by asscending order, then col1 by descending order 
+
+        -- modifying column values
+            --- df.iloc[1,["col1"]] = value 
+            --- df["price"] = np.where(df["item_type"] == "expensive", 999.99, 1.99)
+            --- df["total_price"] = df["units_sold"] * df["cost"]
+
+            --- converting column to date format
+                    df["date"] = pd.to_datetime(df["date"], format="%Y-%m-%d")
+            --- take first half of string
+                    df["first_name_only"] = df["name"].str.split(" ").str[0]
+            --- take only year
+                    df["year"] = df["date"].dt.year
+        
+        -- modifying columns 
+            --- df = df.drop(columns = ["col1", "col2"])
+            --- df = df.rename(columns={"old_col_name": "new_col_name"})
+
+        -- copy data frame 
+            --- df2 = df1.copy(deep=True)
+        
+        -- merging and concatenating 
+            --- df3 = pd.merge(df1, df2, on="col_both", how="left", suffix=["df1","df2"])
+            --- df3 = pd.concat([df1, df2])
+    
+
+    - aggregating 
+        -- df["col1"].value_counts()
+        -- df.groupby(["col1"]).agg({"col2":"sum", "col3":"mean"})
+
+        -- pivot
+            --- pivot = df.pivot(columns = "col_for_horizontal", index = "col_for_vertical", values = "col")
+
+    
+
+    - iterations
+        -- for index, row in df.iterrows(): ------> memory inefficient
+        -- df["col"] = df.apply(lambda x: fun(x), axis=1)
+            --- axis=1: iterating through each row 
+            --- axis=0: iterating through each column
+    
+
+    - NULL values
+        -- NA counts
+            --- df.isna().sum()
+        
+        -- fill NA
+            --- df.fillna(df["col"].mean())
+            --- df["col1"] = df["col1"].interpolate()
+        
+        -- drop NA
+            --- df = df.dropna(subset = ["col1", "col2"])
+    
+    
+    - advanced functionalities
+        -- shift - create a copy of a column and shift the values by 1, facilitate calculating percentage change
+            --- df["yesterday_revenue"] = df["revenue"].shift(1)
+
+        -- create rank
+            --- df["col_rank"] = df["col_compare"].rank(ascending=False)
+        
+        -- rolling cumulation
+            --- df["cumulative_revenue"] = df["revenue"].cumsum()
+    
+
+    - optimization - after version 2.0
+        -- pd.read_csv(path, engine="pyarrow", dtype_backend = "pyarrow")
+    
+
+    - write out data
+        -- df.to_csv(path,index=False)
+
+
+
+
+3. Auxiliary Functionalities 
+
+    - traverse many subfolders to move all the contents into one folder
+        - recursion
+            -- define a function that list all the directories of the path argument with a for loop, and for each directory
+            -- if it is in image format (it is an image), then move the image and finish the current recursive loop
+            -- if it is a directory, then call the function again with updated path (append the directory name into the path)
+
+        - move the images
+            -- create a new folder, and use shutil.copy to move the image
+
+        - details of the crawl_dir function
+
+            import os
+            from pathlib import Path
+            import shutil
+            TARGET_PATH = "bedroom_dataset"
+            def crawl_dir(path):
+                sub_dirs = os.listdir(path)
+                sub_dirs = [Path(str(path)+r"/"+item) for item in sub_dirs]
+                for sub_dir in sub_dirs:
+                    if sub_dir.suffix != ".webp":
+                        crawl_dir(sub_dir)
+                    else:
+                        target = os.path.join(TARGET_PATH,sub_dir.name)
+                        shutil.copy(sub_dir,target)
+            
+            -- for each path, list all the subfolders and create the full path for all subfolders
+
+
+    - Saving array as text, load with np
+        - flat array
+            -- sample_array = [32, 1446, 101, 1280]
+            -- a = list(map(str,sample_array)) --> ["32", "1446", "101", "1280"]
+            -- b = " ".join(a) --> "32 1446 101 1280"
+            -- with open("test.txt","w") as f: f.write(b)
+            -- c = np.loadtxt("test.txt",dtype=int)
+        - nested array - process
+            -- sample_array = [[1, 2], [3, 4]]
+            -- a = str(sample_array)
+            -- a = a[1:-2] --> "[1, 2], [3, 4"
+            -- a = a.replace("[","") --> "1, 2], [3, 4"
+            -- a = a.replace("]","\n") --> "1, 2\n, 3, 4"
+            -- a = a.replace(",", "") --> "1 2\n 3 4"
+            -- with open("test.txt","w") as f: f.write(a)
+        - nested array - decode
+            -- txt_array = "1 2\n 3 4"
+            -- a = text_array.split("\n") --> ["1 2", " 3 4"]
+            -- a = [[int(num) for num in block.strip().split(" ")] for block in a]
+            --> [[1, 2], [3, 4]]
+
+
+
+
+
+
+

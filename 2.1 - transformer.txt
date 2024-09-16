@@ -1,0 +1,67 @@
+parameters
+    - H - head_size
+    - T - block_size; time dimension
+    - C - embedding dimension
+    - B - batch_size
+
+
+single attention head
+    - arg:
+        -- C, H, T, dropout_rate, is_decoder
+    - (B, T, C) --> (B, T, H)
+    - define
+        -- Q, K, V are seperate nn.Linear(C,H,bias=False)
+        -- (if applicable) attention mask 
+            1. self.register_buffer("mask_matrix",torch.tril(torch.ones(T, T)))
+        -- dropout
+
+    - forward pass
+        -- q, k, v are output from passing tokens to Q, K, V --> (B, T, H)
+        -- attention weights --> (B, T, T)
+            1. w = q @ k.transpose(-2, -1) * H^(-0.5)--> (B, T, T)
+            2. (if applicable) w = w.mask_fill(self.mask_matrix==0,float('-inf'))
+            3. w = softmax(w,dim=-1)
+            4. w = dropout(w)
+        -- output = w @ v (B, T, H)
+
+multihead_attention
+    - arg
+        -- C, n_heads, T, dropout_rate, is_decoder
+    - (B, T, C) --> (B, T, C)
+    - define
+        -- H = C // n_heads
+        -- heads = nn.ModuleList([single_head(C, H, T, dp_r, is_dc) for _ in range(num_heads)])
+        -- projection = nn.Linear(C, C)
+        -- dropout
+    - forward pass
+        -- multi_heads = [h(x) for h in self.heads] --> [(B, T, H)s]
+        -- output = torch.cat(multi_heads, dim=-1) --> (B, T, C)
+        -- output = self.projection(output) --> (B, T, C)
+        -- dropout(output)
+
+feed_forward
+    - arg
+        -- C, dropout_rate, multiplier
+    - define - ff_layer
+        -- nn.Linear(C, C*multiplier)
+        -- nn.LeakyReLU()
+        -- nn.Linear(C*multiplier, C)
+        -- nn.Dropout
+    - forward pass
+        -- ff_layer(x)
+
+transformer_block
+    - arg
+        -- C, num_heads, T, dropout_ff, dropout_head
+        -- is_decoder, ff_multiplier
+    - requirement:
+        -- C % num_heads == 0
+    - define
+        -- H = C / num_heads
+        -- multi_atten = multihead_attention(C,num_heads,T,dropout_head,is_decoder)
+        -- ff = feed_forward(C, dropout_ff, ff_multiplier)
+        -- layernorm1, layernorm2 = nn.LayerNorm(C)
+    
+    - forward pass
+        -- attention_output = x + multi_atten(layernorm1(x))
+        -- output = attention_output + ff(layernorm2(attention_output))
